@@ -1,0 +1,55 @@
+#spring.application.name=api-gateway
+#server:
+#  port: 8080
+#
+#spring:
+#  cloud:
+#    gateway:
+#      routes:
+#        - id: auth-service
+#          uri: http://auth-service:8080
+#          predicates:
+#            - Path=/auth/**
+#          filters:
+#            - StripPrefix=1
+#
+#        - id: patient-service
+#          uri: http://patient-service:8080
+#          predicates:
+#            - Path=/patients/**
+#          filters:
+#            - StripPrefix=1
+#            - name: JwtAuthFilter
+#
+## Actuator for health checks
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: health,info
+
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: http://auth-service:8080
+          predicates:
+            - Path=/auth/**
+
+        - id: patient-service
+          uri: http://patient-service:8080
+          predicates:
+            - Path=/patients/**
+
+#springdoc:
+#  swagger-ui:
+#    urls:
+#      - name: Authentication Service
+#        url: /auth/v3/api-docs
+#
+#      - name: Patient Service
+#        url: /patients/v3/api-docs

@@ -1,0 +1,92 @@
+# version: '3.8'
+
+services:
+  # --- DATABASES ---
+  auth-postgres-db:
+    image: postgres:13
+    container_name: auth-postgres-db
+    environment:
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_password
+      POSTGRES_DB: auth_db
+    ports:
+      - "5432:5432" # Host port 5432 mapped to Auth DB
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+       - ./auth-service/src/main/resources/db/init-data.sql:/docker-entrypoint-initdb.d/01-init-data.sql
+    networks:
+      - clinic-network
+
+  patient-postgres-db:
+    image: postgres:13
+    container_name: patient-postgres-db
+    environment:
+      POSTGRES_USER: patient_user
+      POSTGRES_PASSWORD: patient_password
+      POSTGRES_DB: patient_db
+    ports:
+      - "5433:5432" # Host port 5433 mapped to Patient DB
+    volumes:
+      - patient-db-data:/var/lib/postgresql/data
+    networks:
+      - clinic-network
+
+  # --- MICROSERVICES ---
+  auth-service:
+    build: ./auth-service # Tells Docker to build the image using the Dockerfile in the auth-service directory
+    container_name: auth-service
+    ports:
+      - "8081:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://auth-postgres-db:5432/auth_db
+      SPRING_DATASOURCE_USERNAME: auth_user
+      SPRING_DATASOURCE_PASSWORD: auth_password
+      JWT_SECRET: 37adf561500e6dacb4e9311d363e47a9789ce80f28a35d2cc0f935c24213d533
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"] # This always returns "healthy"
+      interval: 5s
+      timeout: 3s
+      retries: 1
+    depends_on:
+      - auth-postgres-db
+    networks:
+      - clinic-network
+
+  patient-service:
+    build: ./patient-management-service
+    container_name: patient-service
+    ports:
+      - "8082:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://patient-postgres-db:5432/patient_db
+      SPRING_DATASOURCE_USERNAME: patient_user
+      SPRING_DATASOURCE_PASSWORD: patient_password
+      JWT_SECRET: 37adf561500e6dacb4e9311d363e47a9789ce80f28a35d2cc0f935c24213d533
+    depends_on:
+      patient-postgres-db: # Long syntax for DB
+        condition: service_started # This is the default
+      auth-service:        # Long syntax for auth-service
+        condition: service_healthy
+    networks:
+      - clinic-network
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"  
+    environment:
+      JWT_SECRET: 37adf561500e6dacb4e9311d363e47a9789ce80f28a35d2cc0f935c24213d533 
+    depends_on:
+      - auth-service
+      - patient-service
+    networks:
+      - clinic-network
+
+volumes:
+  auth-db-data:
+  patient-db-data:
+
+networks:
+  clinic-network:
+    driver: bridge

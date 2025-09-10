@@ -1,0 +1,32 @@
+# Java
+*.class
+*.jar
+*.war
+*.ear
+target/
+build/
+.mvn/
+mvnw
+mvnw.cmd
+
+# Docker
+docker-compose.override.yml
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.sw*
+*.bak
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files (don't commit secrets!)
+.env
+*.env.local
