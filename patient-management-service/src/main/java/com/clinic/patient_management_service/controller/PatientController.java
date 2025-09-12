@@ -26,8 +26,7 @@ public class PatientController {
     private final GatewayAuthHelper authHelper;
 
     @PostMapping
-    @RequiredRole({"ADMIN", "NURSE", "DOCTOR"})
-    //remove admin later this is for testing for now
+    @RequiredRole({"NURSE", "DOCTOR"})
     public ResponseEntity<ApiResponse<PatientResponseDTO>> createPatient(
             @RequestBody PatientDTO patientDto
     ) {
@@ -43,7 +42,9 @@ public class PatientController {
         return new ResponseEntity<>(apiResponse, HttpStatus.CREATED);
     }
 
+
     @DeleteMapping("{id}")
+    @RequiredRole({"NURSE", "DOCTOR"})
     public ResponseEntity<ApiResponse<String>> deletePatient(@PathVariable Long id) {
         patientService.removePatient(id);
 
@@ -57,6 +58,7 @@ public class PatientController {
     }
 
     @PutMapping("{id}")
+    @RequiredRole({"NURSE", "DOCTOR"})
     public ResponseEntity<ApiResponse<PatientResponseDTO>> updatePatient(
             @PathVariable Long id,
             @RequestBody PatientDTO patientDto
@@ -73,6 +75,7 @@ public class PatientController {
     }
 
     @GetMapping("all-patients")
+    @RequiredRole({"NURSE", "DOCTOR"})
     public ResponseEntity<ApiResponse<Page<PatientResponseDTO>>> getAllPatients(Pageable pageable) {
         Page<PatientResponseDTO> patientsList = patientService.getAllPatients(pageable);
 
@@ -85,6 +88,7 @@ public class PatientController {
     }
 
     @GetMapping("{nationalId}")
+    @RequiredRole({"NURSE", "DOCTOR"})
     // TODO: make this return a patientDTO
     public ResponseEntity<ApiResponse<PatientResponseDTO>> getPatient(@PathVariable String nationalId) {
         PatientResponseDTO patient = patientService.getPatientByNationalID(nationalId);
@@ -98,6 +102,7 @@ public class PatientController {
     }
 
     @GetMapping("search")
+    @RequiredRole({"NURSE", "DOCTOR"})
     public ResponseEntity<ApiResponse<List<PatientResponseDTO>>> findPatientFullName(
             @RequestParam String firstname,
             @RequestParam String lastname) {
