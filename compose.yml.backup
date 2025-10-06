@@ -31,35 +31,6 @@ services:
     networks:
       - clinic-network
 
-  appointment-postgres-db:
-      image: postgres:13
-      container_name: appointment-postgres-db
-      environment:
-        POSTGRES_USER: appointment_user
-        POSTGRES_PASSWORD: appointment_password
-        POSTGRES_DB: appointment_db
-      ports:
-        - "5434:5432" # Host port 5434 mapped to Appointment DB
-      volumes:
-        - appointment-db-data:/var/lib/postgresql/data
-      networks:
-        - clinic-network
-
-  # --- MESSAGE BROKER ---
-  rabbitmq:
-    image: rabbitmq:3.12-management
-    container_name: rabbitmq
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    ports:
-      - "5672:5672"   # AMQP protocol for services
-      - "15672:15672" # Management UI (http://localhost:15672)
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-    networks:
-      - clinic-network
-
   # --- MICROSERVICES ---
   auth-service:
     build: ./auth-service # Tells Docker to build the image using the Dockerfile in the auth-service directory
@@ -99,28 +70,6 @@ services:
     networks:
       - clinic-network
 
-  appointment-service:
-    build: ./appointment-service
-    container_name: appointment-service
-    ports:
-      - "8083:8080"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://appointment-postgres-db:5432/appointment_db
-      SPRING_DATASOURCE_USERNAME: appointment_user
-      SPRING_DATASOURCE_PASSWORD: appointment_password
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PORT: 5672
-      SPRING_RABBITMQ_USERNAME: guest
-      SPRING_RABBITMQ_PASSWORD: guest
-      PATIENT_SERVICE_URL: http://patient-service:8082
-      JWT_SECRET: 37adf561500e6dacb4e9311d363e47a9789ce80f28a35d2cc0f935c24213d533
-    depends_on:
-      - appointment-postgres-db
-      - rabbitmq
-      - patient-service
-    networks:
-      - clinic-network
-
   api-gateway:
     build: ./api-gateway
     container_name: api-gateway
@@ -131,15 +80,12 @@ services:
     depends_on:
       - auth-service
       - patient-service
-      - appointment-service
     networks:
       - clinic-network
 
 volumes:
   auth-db-data:
   patient-db-data:
-  appointment-db-data:
-  rabbitmq-data:
 
 networks:
   clinic-network:

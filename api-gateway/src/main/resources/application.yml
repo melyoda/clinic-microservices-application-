@@ -45,6 +45,11 @@ spring:
           predicates:
             - Path=/patients/**
 
+        - id: appointment-service
+          uri: http://appointment-service:8080
+          predicates:
+            - Path=/appointments/**
+
 #springdoc:
 #  swagger-ui:
 #    urls:
