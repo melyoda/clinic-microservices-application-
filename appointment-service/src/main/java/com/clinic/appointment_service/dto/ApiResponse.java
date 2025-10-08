@@ -1,7 +1,6 @@
-package com.mawkly.auth_service.dto;
+package com.clinic.appointment_service.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

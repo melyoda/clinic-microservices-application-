@@ -13,7 +13,7 @@ import org.springframework.http.HttpStatus;
 @Builder
 public class ApiResponse<T> {
 
-    @JsonIgnore // Hide this internal field from JSON serialization
+    @JsonIgnore
     private HttpStatus httpStatus;
 
     private String message;
