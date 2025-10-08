@@ -17,11 +17,24 @@ public class PatientServiceClient {
 
     public Mono<Boolean> patientExists(Long patientId) {
         return webClient.get()
-                .uri("/patients/{nationalId}", patientId) // Assuming patient service has this endpoint
+                .uri("/patients/{id}/exists", patientId)
                 .retrieve()
-                .onStatus(HttpStatus.NOT_FOUND::equals, clientResponse -> Mono.just(new PatientNotFoundException("Patient not found: " + patientId)))
+                .onStatus(s -> s.value()==404,
+                        resp -> Mono.error(new PatientNotFoundException("Patient not found: " + patientId)))
                 .toBodilessEntity()
-                .flatMap(response -> Mono.just(response.getStatusCode().is2xxSuccessful()));
+                .map(e -> true)
+                .onErrorResume(PatientNotFoundException.class, ex -> Mono.just(false));
+    }
+
+    /** Returns true if patient with given nationalId exists, false if 404, errors otherwise. */
+    public Mono<Boolean> existsByNationalId(String nationalId) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/patients/{nationalId}").build(nationalId))
+                .exchangeToMono(resp -> {
+                    if (resp.statusCode().is2xxSuccessful()) return Mono.just(true);
+                    if (resp.statusCode().value() == 404)     return Mono.just(false);
+                    return resp.createException().flatMap(Mono::error);
+                });
     }
 
     // Custom exception for clarity

@@ -29,12 +29,14 @@ public class TrustGatewayFilter implements Filter {
         }
 
         // Check if the gateway added the authentication headers
+        if ("OPTIONS".equalsIgnoreCase(httpRequest.getMethod())) { chain.doFilter(request, response); return; }
         if (httpRequest.getHeader("X-User-Id") == null) {
             ((HttpServletResponse) response).setStatus(HttpStatus.UNAUTHORIZED.value());
             response.setContentType("application/json");
             response.getWriter().write("{\"error\": \"Missing gateway authentication headers\"}");
             return;
         }
+
 
         // If headers are present, the gateway has already authenticated this request
         chain.doFilter(request, response);

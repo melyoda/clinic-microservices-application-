@@ -16,7 +16,7 @@ public class AppointmentResponse {
     private Long id;
     private Long patientId;
     private Long doctorId;        // Assigned doctor for the appointment
-    private Long createdBy;       // Who created this appointment
+    private String createdBy;       // Who created this appointment
     private LocalDateTime dateTime;
     private String type;
     private AppointmentStatus status;

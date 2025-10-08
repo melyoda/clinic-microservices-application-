@@ -30,35 +30,44 @@ public class AppointmentService {
     private final CurrentUser currentUser;
 
     @Transactional
-    public Appointment createAppointment(CreateAppointmentRequest request, Long createdByUserId) {
-        // Validate that the patient exists
-        boolean exists = patientServiceClient.patientExists(request.getPatientId())
-                .blockOptional()
-                .orElseThrow(() -> new IllegalStateException("Could not verify patient existence"));
+    public AppointmentResponse createAppointment(CreateAppointmentRequest request) {
 
-        if (!exists) {
-            throw new PatientServiceClient.PatientNotFoundException("Patient with ID " + request.getPatientId() + " not found.");
+        if (request.getPatientNationalId() == null || request.getPatientNationalId().isBlank()) {
+            throw new IllegalArgumentException("patientNationalId is required");
         }
+        boolean exists = patientServiceClient.existsByNationalId(request.getPatientNationalId())
+                .blockOptional().orElse(false);
+        if (!exists) throw new PatientServiceClient.PatientNotFoundException(
+                "Patient with nationalId " + request.getPatientNationalId() + " not found");
+
 
         // Create appointment with createdBy tracking
-        Appointment appointment = new Appointment(
-                request.getPatientId(),
-                createdByUserId,  // The user who is creating this appointment
-                request.getDateTime(),
-                request.getType()
-        );
+        Appointment appointment = Appointment.builder()
+                .patientId(request.getPatientId())
+                .doctorId(request.getDoctorId())
+                .createdBy(currentUser.getUsername())
+                .dateTime(request.getDateTime())
+                .type(request.getType())
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
 
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
         // Publish event
-        publishAppointmentEvent(savedAppointment, RabbitMQConfig.APPOINTMENT_SCHEDULED_ROUTING_KEY, "SCHEDULED");
+//        publishAppointmentEvent(savedAppointment, RabbitMQConfig.APPOINTMENT_SCHEDULED_ROUTING_KEY, "SCHEDULED");
 
-        return savedAppointment;
+        try {
+            publishAppointmentEvent(savedAppointment,  RabbitMQConfig.APPOINTMENT_SCHEDULED_ROUTING_KEY, "SCHEDULED");
+        } catch (Exception e) {
+            System.err.println("Failed to publish event: " + e.getMessage());
+        }
+
+        return AppointmentMapper.toAppointmentResponse(savedAppointment);
     }
 
     /// change
     @Transactional
-    public Appointment updateAppointmentStatus(Long id, AppointmentStatus status) {
+    public AppointmentResponse  updateAppointmentStatus(Long id, AppointmentStatus status) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Appointment not found with id: " + id));
 
@@ -66,13 +75,17 @@ public class AppointmentService {
         Appointment updatedAppointment = appointmentRepository.save(appointment);
 
         // Publish event for cancellation or other status updates
-        if (status == AppointmentStatus.CANCELLED) {
-            publishAppointmentEvent(updatedAppointment, RabbitMQConfig.APPOINTMENT_CANCELLED_ROUTING_KEY, "CANCELLED");
-        } else {
-            publishAppointmentEvent(updatedAppointment, RabbitMQConfig.APPOINTMENT_UPDATED_ROUTING_KEY, "UPDATED");
+        try {
+            if (status == AppointmentStatus.CANCELLED) {
+                publishAppointmentEvent(updatedAppointment, RabbitMQConfig.APPOINTMENT_CANCELLED_ROUTING_KEY, "CANCELLED");
+            } else {
+                publishAppointmentEvent(updatedAppointment, RabbitMQConfig.APPOINTMENT_UPDATED_ROUTING_KEY, "UPDATED");
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to publish event: " + e.getMessage());
         }
 
-        return updatedAppointment;
+        return AppointmentMapper.toAppointmentResponse(updatedAppointment);
     }
 
     public List<AppointmentResponse> getAppointmentsByPatient(Long patientId) {
@@ -109,6 +122,6 @@ public class AppointmentService {
                 appointment.getDateTime(),
                 appointment.getStatus()
         );
-        rabbitTemplate.convertAndSend("appointment.events", routingKey, event);
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, routingKey, event);
     }
 }

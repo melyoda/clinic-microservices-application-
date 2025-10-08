@@ -26,22 +26,51 @@ public class AppointmentController {
 
 
     @PostMapping
-    @RequiredRole({"NURSE", "DOCTOR", "ADMIN"})  // All staff roles can create appointments
+    @RequiredRole({"NURSE", "DOCTOR"})
     public ResponseEntity<ApiResponse<AppointmentResponse>> createAppointment(
-            @Valid @RequestBody CreateAppointmentRequest request,
-            @RequestHeader("X-User-Id") Long createdByUserId,
-            @RequestHeader("X-User-Roles") String userRoles) {
+            @Valid @RequestBody CreateAppointmentRequest request) {
 
-        // Additional business logic based on roles
-        if (userRoles.contains("NURSE") && request.getDoctorId() == null) {
-            return ResponseEntity.badRequest().body(
-                    ApiResponse.error("Nurses must specify a doctor for the appointment", HttpStatus.BAD_REQUEST)
-            );
-        }
+        AppointmentResponse response = appointmentService.createAppointment(request);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Appointment created", response, HttpStatus.CREATED));
+    }
 
-        Appointment appointment = appointmentService.createAppointment(request, createdByUserId);
-        AppointmentResponse response = mapToResponse(appointment);
+    @PatchMapping("/{id}/status")
+    @RequiredRole({"NURSE", "DOCTOR"})
+    public ResponseEntity<ApiResponse<AppointmentResponse>> updateStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateAppointmentStatusRequest request) {
 
-        return ResponseEntity.ok(ApiResponse.success("Appointment created", response, HttpStatus.CREATED));
+        AppointmentResponse response = appointmentService.updateAppointmentStatus(id, request.getStatus());
+        return ResponseEntity.ok(ApiResponse.success("Appointment status updated", response, HttpStatus.OK));
+    }
+
+    @GetMapping("/patient/{patientId}")
+    @RequiredRole({"NURSE", "DOCTOR", "ADMIN"})
+    public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getPatientAppointments(
+            @PathVariable Long patientId) {
+
+        List<AppointmentResponse> appointments = appointmentService.getAppointmentsByPatient(patientId);
+        return ResponseEntity.ok(ApiResponse.success("Patient appointments retrieved", appointments, HttpStatus.OK));
+    }
+
+    @GetMapping("/doctor/{doctorId}/date/{date}")
+    @RequiredRole({"NURSE", "DOCTOR", "ADMIN"})
+    public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getDoctorAppointmentsByDate(
+            @PathVariable Long doctorId,
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+
+        List<AppointmentResponse> appointments = appointmentService.getAppointmentsByDoctorAndDate(doctorId, date);
+        return ResponseEntity.ok(ApiResponse.success("Doctor appointments for date retrieved", appointments, HttpStatus.OK));
+    }
+
+    @GetMapping("/doctor/{doctorId}")
+    @RequiredRole({"NURSE", "DOCTOR", "ADMIN"})
+    public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getDoctorAppointments(
+            @PathVariable Long doctorId) {
+
+        List<AppointmentResponse> appointments = appointmentService.getAppointmentsByDoctor(doctorId);
+        return ResponseEntity.ok(ApiResponse.success("Doctor appointments retrieved", appointments, HttpStatus.OK));
     }
 }

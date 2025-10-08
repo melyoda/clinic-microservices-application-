@@ -7,9 +7,8 @@ import java.time.LocalDateTime;
 
 @Data
 public class CreateAppointmentRequest {
-    @NotNull(message = "Patient ID cannot be null")
     private Long patientId;
-
+    private String patientNationalId;
     @NotNull(message = "Doctor ID cannot be null")
     private Long doctorId;
 

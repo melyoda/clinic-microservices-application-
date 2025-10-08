@@ -1,6 +1,7 @@
 package com.clinic.appointment_service.aspect;
 
 import com.clinic.appointment_service.common.annotations.RequiredRole;
+import com.clinic.appointment_service.exception.AccessDeniedException;
 import com.clinic.appointment_service.util.GatewayAuthHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,6 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.nio.file.AccessDeniedException;
 import java.util.Arrays;
 
 @Aspect
@@ -28,7 +28,7 @@ public class AuthorizationAspect {
         String userRoles = request.getHeader("X-User-Roles");
 
         if (userRoles == null) {
-            throw new java.nio.file.AccessDeniedException("No roles found in request");
+            throw new AccessDeniedException("No roles found in request");
         }
 
         // Check if user has ANY of the required roles
@@ -36,7 +36,7 @@ public class AuthorizationAspect {
                 .anyMatch(userRoles::contains);
 
         if (!hasRequiredRole) {
-            throw new java.nio.file.AccessDeniedException("Insufficient permissions. Required one of: " +
+            throw new AccessDeniedException("Insufficient permissions. Required one of: " +
                     Arrays.toString(requiredRole.value()));
         }
 
