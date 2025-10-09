@@ -11,8 +11,9 @@ public class SecurityConfig {
     public FilterRegistrationBean<TrustGatewayFilter> trustGatewayFilter() {
         FilterRegistrationBean<TrustGatewayFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(new TrustGatewayFilter());
+        registrationBean.addUrlPatterns("/*");
         registrationBean.addUrlPatterns("/appointments/*");
-        registrationBean.addUrlPatterns("/v3/api-docs/*", "/swagger-ui/*", "/swagger-ui.html");
+        registrationBean.addUrlPatterns("/appointments", "/appointments/*", "/v3/api-docs/*", "/swagger-ui/*", "/swagger-ui.html");
         return registrationBean;
     }
 }

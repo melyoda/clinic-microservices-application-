@@ -13,7 +13,7 @@ services:
       - "5432:5432" # Host port 5432 mapped to Auth DB
     volumes:
       - auth-db-data:/var/lib/postgresql/data
-       - ./auth-service/src/main/resources/db/init-data.sql:/docker-entrypoint-initdb.d/01-init-data.sql
+      - ./auth-service/src/main/resources/db/init-data.sql:/docker-entrypoint-initdb.d/01-init-data.sql
     networks:
       - clinic-network
 

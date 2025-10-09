@@ -2,6 +2,7 @@ package com.clinic.appointment_service.service;
 
 import com.clinic.appointment_service.config.RabbitMQConfig;
 import com.clinic.appointment_service.dto.AppointmentResponse;
+import com.clinic.appointment_service.dto.PatientResponseDTO;
 import com.clinic.appointment_service.event.AppointmentEvent;
 import com.clinic.appointment_service.mapper.AppointmentMapper;
 import com.clinic.appointment_service.model.Appointment;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,7 +31,7 @@ public class AppointmentService {
     private final RabbitTemplate rabbitTemplate;
     private final CurrentUser currentUser;
 
-    @Transactional
+   /* @Transactional
     public AppointmentResponse createAppointment(CreateAppointmentRequest request) {
 
         if (request.getPatientNationalId() == null || request.getPatientNationalId().isBlank()) {
@@ -63,7 +65,43 @@ public class AppointmentService {
         }
 
         return AppointmentMapper.toAppointmentResponse(savedAppointment);
-    }
+    }*/
+   @Transactional
+   public AppointmentResponse createAppointment(CreateAppointmentRequest request) {
+       if ((request.getPatientId() == null) &&
+               (request.getPatientNationalId() == null || request.getPatientNationalId().isBlank())) {
+           throw new IllegalArgumentException("Provide patientId or patientNationalId");
+       }
+
+       Long patientId = request.getPatientId();
+       if (patientId == null) {
+           PatientResponseDTO p = patientServiceClient.getByNationalId(request.getPatientNationalId())
+                   .blockOptional()
+                   .orElseThrow(() -> new IllegalStateException("Could not fetch patient by nationalId"));
+           patientId = p.getId();                    // <-- critical line
+       }
+
+       // optional: conflict check here
+
+       Appointment appt = Appointment.builder()
+               .patientId(patientId)
+               .doctorId(request.getDoctorId())
+               .createdBy(Optional.ofNullable(currentUser.getUsername()).orElse("system"))
+               .dateTime(request.getDateTime())
+               .type(request.getType())
+               .status(AppointmentStatus.SCHEDULED)
+               .build();
+
+       Appointment saved = appointmentRepository.save(appt);
+
+       try {
+           publishAppointmentEvent(saved, RabbitMQConfig.APPOINTMENT_SCHEDULED_ROUTING_KEY, "SCHEDULED");
+       } catch (Exception ignore) {}
+
+       return AppointmentMapper.toAppointmentResponse(saved);
+   }
+
+
 
     /// change
     @Transactional

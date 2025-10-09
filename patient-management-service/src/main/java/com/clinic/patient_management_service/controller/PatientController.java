@@ -90,7 +90,9 @@ public class PatientController {
     @GetMapping("{nationalId}")
     @RequiredRole({"NURSE", "DOCTOR"})
     // TODO: make this return a patientDTO
-    public ResponseEntity<ApiResponse<PatientResponseDTO>> getPatient(@PathVariable String nationalId) {
+    public ResponseEntity<ApiResponse<PatientResponseDTO>> getPatient(
+            @PathVariable String nationalId
+    ) {
         PatientResponseDTO patient = patientService.getPatientByNationalID(nationalId);
 
         ApiResponse<PatientResponseDTO> apiResponse = ApiResponse.<PatientResponseDTO>builder()

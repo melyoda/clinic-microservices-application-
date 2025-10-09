@@ -1,7 +1,7 @@
 #spring.application.name=appointment-service
 
 server:
-  port: 8083
+  port: 8080
 
 spring:
   datasource:
@@ -28,4 +28,4 @@ spring:
 # External services
 services:
   patient:
-    url: http://patient-management-service:8082
+    url: http://patient-service:8080

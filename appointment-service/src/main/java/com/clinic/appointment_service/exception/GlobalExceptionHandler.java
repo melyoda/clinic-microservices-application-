@@ -42,9 +42,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleGenericException(Exception ex) {
+//        return new ResponseEntity<>(
+//                ApiResponse.builder().httpStatus(HttpStatus.INTERNAL_SERVER_ERROR).message("An internal server error occurred.").build(),
+//                HttpStatus.INTERNAL_SERVER_ERROR
+//        );
+        ex.printStackTrace(); // TEMP: log the real cause
         return new ResponseEntity<>(
-                ApiResponse.builder().httpStatus(HttpStatus.INTERNAL_SERVER_ERROR).message("An internal server error occurred.").build(),
+                ApiResponse.error("An internal server error occurred.", HttpStatus.INTERNAL_SERVER_ERROR),
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
     }
+
+
 }
