@@ -39,13 +39,13 @@ Each service:
 ## 🚀 **Quick Start**
 
 ### **1. Clone the repository**
-```bash
-git clone https://github.com/<your-username>/clinic-microservices-system.git
+
+git clone https://github.com/melyoda/clinic-microservices-system.git
 cd clinic-microservices-system
 
 ### **2. Build and start the system**
 Make sure Docker and Docker Compose are installed, then run:
-```bash
+
 docker-compose up --build
 This will start:
 
